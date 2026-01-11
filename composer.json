@@ -1,0 +1,19 @@
+{
+    "name": "patryknamyslak/php-form-builder",
+    "description": "A form builder that fetches a tables structure and creates suitable fields, ideal for admin panels or to ease up the way of populating a table!",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "PatrykNamyslak\\FormBuilder\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Patryk",
+            "email": "contact@patryknamyslak.pl"
+        }
+    ],
+    "require": {
+        "patryknamyslak/patbase": "^1.3"
+    }
+}
