@@ -8,6 +8,7 @@ use PatrykNamyslak\Patbase;
 class Form{
     /** This will be an array of objects for all of the columns*/
     private array $tableStructure;
+    private(set) array $fieldNames;
     private string $action;
     private string $method;
 
@@ -16,17 +17,46 @@ class Form{
      * @param \PatrykNamyslak\Patbase $databaseConnection
      * @param string $table This is the table name for which the input fields will be fetched from, the input fields will be the columns from the table
      */
-    public function __construct(protected Patbase $databaseConnection, string $table){
+    public function __construct(protected Patbase $databaseConnection, protected string $table){
         $query = "DESCRIBE {$table};";
         try{
             $stmt = $databaseConnection->connection->query($query);
             $stmt->setFetchMode(\PDO::FETCH_OBJ);
             $this->tableStructure = $stmt->fetchAll();
+            $this->fieldNames = array_column($this->tableStructure, "Field");
             return;
         }catch(Exception $e){
             echo "Form Builder Failed \n\n";
             return;
             // echo $e;
+        }
+    }
+
+
+    /**
+     * Turn an array of regular field names into placeholders that are ready for prepared statements.
+     * @param array $fieldNames Database table field names that will be used in a prepared statement
+     * @return string
+     */
+    public function createPlaceholdersFromArray(array $fieldNames): string{
+        foreach($fieldNames as &$placeholder){
+            $placeholder = ":" . $placeholder;
+        }
+        return implode(",", $fieldNames);
+    }
+
+    public function submit(array $formData){
+        $placeholders = $this->createPlaceholdersFromArray($this->fieldNames);
+        $columnNames = implode(",", $this->fieldNames);
+        $query = "INSERT INTO `{$this->table}` ({$columnNames}) VALUES($placeholders);";
+        try{
+            $this->databaseConnection->prepare($query, $formData)->execute();
+            echo "Form submitted!";
+            return;
+        }catch(Exception $e){
+            echo $e;
+            echo "An error has occurred";
+            return;
         }
     }
 
@@ -86,6 +116,7 @@ class Form{
             }
         }
         ?>
+        <button type="submit">Submit</button>
         </form>
         <?php
     }

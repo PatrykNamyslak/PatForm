@@ -108,9 +108,8 @@ class Input{
     // Non chainable methods, these must be at the end of the chain!
     /**
      * Renders the label
-     * @return static
      */
-    function renderLabel(){
+    function renderLabel(): static{
         if ($this->label){
             ?>
             <label for="<?= $this->name ?>"><?= ucwords($this->label) ?>:</label>
@@ -133,7 +132,7 @@ class Input{
         <?php
     }
 
-    public function dropdown(){
+    public function dropdown(): void{
         ?>
         <select name="<?= $this->name ?>" 
         <?php $this->renderRequiredAttribute(); ?>
@@ -149,7 +148,7 @@ class Input{
         <?php
     }
 
-    public function textField(){
+    public function textField(): void{
         ?>
         <input 
         type="text" 
@@ -165,23 +164,23 @@ class Input{
      * This functions pure purpose is to check if there should be a required mark on an input field or not include it
      * @return void
      */
-    public function renderRequiredAttribute(){
+    public function renderRequiredAttribute(): void{
         if($this->required){
             echo "required";
         }
     }
 
-    public function renderMultipleAttribute(){
+    public function renderMultipleAttribute(): void{
         if($this->acceptMultipleValues){
             echo "multiple";
         }
     }
 
-    public function getTypeInString(){
+    public function getTypeInString(): string{
         return $this->typeInString;
     }
 
-    public function prettyPrint(string $text){
+    public function prettyPrint(string $text): string{
         $text = str_replace("_", " ", $text);
         return ucwords($text);
     }
