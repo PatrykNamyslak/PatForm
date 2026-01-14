@@ -47,6 +47,12 @@ class Form{
 
     public function submit(array $formData){
         $placeholders = $this->createPlaceholdersFromArray($this->fieldNames);
+        foreach($this->tableStructure as $column){
+            $formData[$column->Field] = match($column->Type){
+                "json" => json_encode($formData[$column->Field]),
+                default => $formData[$column->Field],
+            };
+        }
         $columnNames = implode(",", $this->fieldNames);
         $query = "INSERT INTO `{$this->table}` ({$columnNames}) VALUES($placeholders);";
         try{
