@@ -1,3 +1,6 @@
 - Add data handling for different data types just like i did with returning different input fields depending on the requirement of the table schema
 
 - Add CSRF protection
+
+- Implement the placeholder functionality across all of the field types
+- Add the HTMX functionality

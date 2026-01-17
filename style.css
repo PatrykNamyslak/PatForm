@@ -1,0 +1,28 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+html, body{
+    height: 100%;
+    width: 100%;
+}
+
+body{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+form{
+    width: 500px;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+input, textarea{
+    width: 100%;
+}

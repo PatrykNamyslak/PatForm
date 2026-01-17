@@ -11,6 +11,8 @@ class Form{
     private(set) array $fieldNames;
     private string $action;
     private string $method;
+    private bool $htmx = false;
+    private bool $wrapField = false;
 
     /**
      * 
@@ -45,11 +47,21 @@ class Form{
         return implode(",", $fieldNames);
     }
 
+
+    /**
+     * Adds a div surrounding the input and its label, this is if you want to use flexbox or a grid layout for the form.
+     * @return static
+     */
+    public function wrapFields(){
+        $this->wrapField = true;
+        return $this;
+    }
+
     public function submit(array $formData){
         $placeholders = $this->createPlaceholdersFromArray($this->fieldNames);
         foreach($this->tableStructure as $column){
             $formData[$column->Field] = match($column->Type){
-                "json" => json_encode($formData[$column->Field]),
+                "json" => json_encode(explode(",", $formData[$column->Field])),
                 default => $formData[$column->Field],
             };
         }
@@ -86,15 +98,31 @@ class Form{
         };
         return $this;
     }
+    /**
+     * Makes the form use HTMX for the request
+     * @return void
+     */
+    public function htmx(){
+        $this->htmx = true;
+    }
 
     /**
      * Renders the form
      */
-    public function render(bool $renderLabels = true){
+    public function render(string $formTitle, bool $renderLabels = true){
         ?>
+        <h2><?= $formTitle ?></h2>
         <form action="<?= $this->action ?>" method="<?= $this->method ?>">
         <?php
-        foreach ($this->tableStructure as $column){
+        foreach ($this->tableStructure as $column):
+            if ($this->wrapField): ?>
+                <div>
+            <?php
+            endif;
+            // Skip Auto incremented columns
+            if (Column::isAutoIncrement(column: $column)){
+                continue;
+            }
             $Input = new Input;
             $Input
             ->type($column->Type)
@@ -102,7 +130,7 @@ class Form{
             ->name($column->Field)
             ->values($column->Type)
             ->default($column->Default)
-            ->required(Table::isColumnNullable($column) === false);
+            ->required(Column::isNullable($column) === false);
 
             // Render the input field
             if($renderLabels){
@@ -112,7 +140,7 @@ class Form{
             }
             // handle a field that accepts multiple inputs
             if ($Input->getTypeInString() === "json"){
-                $Input->acceptMultipleValues()->textField();
+                $Input->json()->textField();
             }else{
                 match($Input->type){
                     InputType::TEXT_AREA => $Input->textArea(),
@@ -120,7 +148,11 @@ class Form{
                     InputType::DROPDOWN => $Input->dropdown(),
                 };
             }
-        }
+            if ($this->wrapField): ?>
+                </div>
+            <?php
+            endif;
+        endforeach;
         ?>
         <button type="submit">Submit</button>
         </form>

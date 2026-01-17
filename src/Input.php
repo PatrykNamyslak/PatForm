@@ -15,13 +15,22 @@ class Input{
     private ?array $defaultValues = null;
     private bool $acceptMultipleValues = false;
     private bool $required = false;
+    private bool $json = false;
+    private string $placeholder;
 
     private string $dataTypeExpectedByDatabase;
 
 
+
+    private const PLACEHOLDER_TEXT_FOR_JSON_FIELD = "Seperate using commas E.g (One,two,three)";
     // Chainable methods
     public function default(string|null $value): static{
         $this->defaultValue = $value;
+        return $this;
+    }
+
+    public function json(){
+        $this->json = true;
         return $this;
     }
     public function dataTypeExpectedByDatabase(string $value): static{
@@ -148,10 +157,17 @@ class Input{
         <?php
     }
 
-    public function textField(): void{
+    public function textField(?string $placeholder = null): void{
+        $placeholder = match(true){
+            // if the field is a json field append a guide for data insertion (Show what is expected)
+            $this->json => ($placeholder ?? $this->prettyPrint($this->name)) . ": " . self::PLACEHOLDER_TEXT_FOR_JSON_FIELD,
+            isset($placeholder) => $placeholder,
+            default => ucfirst(str_replace("_", " ", $this->name)),
+        };
         ?>
         <input 
         type="text" 
+        placeholder="<?= $placeholder ?>"
         name="<?= $this->name ?>" 
         maxlength="<?= $this->maxLength ?>" 
         <?php $this->renderMultipleAttribute() ?>
@@ -180,8 +196,13 @@ class Input{
         return $this->typeInString;
     }
 
+    /**
+     * Makes the text look pretty :P
+     * @param string $text
+     * @return string
+     */
     public function prettyPrint(string $text): string{
-        $text = str_replace("_", " ", $text);
+        $text = str_replace(["_"], " ", $text);
         return ucwords($text);
     }
 }
