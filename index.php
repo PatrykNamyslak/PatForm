@@ -13,7 +13,7 @@ use PatrykNamyslak\Patbase;
 
 $databaseConnection = new Patbase(database_name: "bite_sized_projects", username: "root", password: "root");
 $form = new Form(databaseConnection: $databaseConnection, table: "resume_projects");
-$form->action("/")->method("POST")->wrapFields();
+$form->action("/")->method("POST")->wrapFields()->htmx()->submitButtonText("Add Project");
 ?>
 <!DOCTYPE html>
 <html lang="en">

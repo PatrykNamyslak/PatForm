@@ -8,7 +8,7 @@ class Input{
      * The type that is used for the column i.e enum, text or varchar
      * @var string
      */
-    private string $typeInString;
+    private string $columnTypeInString;
     private string $name;
     private ?string $defaultValue = null;
     private int $maxLength = 255;
@@ -16,13 +16,12 @@ class Input{
     private bool $acceptMultipleValues = false;
     private bool $required = false;
     private bool $json = false;
-    private string $placeholder;
-
     private string $dataTypeExpectedByDatabase;
 
 
 
-    private const PLACEHOLDER_TEXT_FOR_JSON_FIELD = "Seperate using commas E.g (One,two,three)";
+    private const PLACEHOLDER_TEXT_FOR_JSON_FIELD = "Seperate using commas E.g One,two,three";
+
     // Chainable methods
     public function default(string|null $value): static{
         $this->defaultValue = $value;
@@ -98,14 +97,19 @@ class Input{
                     )
                 );
         }
-        $this->typeInString = $type;
-        $this->type = match($type){
-            "int", "smallint", "mediumint", "tinyint", "bigint" => InputType::NUMBER,
-            "varchar", "json" => InputType::TEXT,
-            "text", "longtext" => InputType::TEXT_AREA,
-            "enum" => InputType::DROPDOWN,
-            "boolean" => InputType::RADIO,
-        };
+        $this->columnTypeInString = $type;
+        if (($this->columnTypeInString === "enum") and (count($this->defaultValues) === 2)){
+            $this->type = InputType::RADIO;
+        }else{
+            $this->type = match($type){
+                "int", "smallint", "mediumint", "bigint" => InputType::NUMBER,
+                "varchar", "json" => InputType::TEXT,
+                "text", "longtext" => InputType::TEXT_AREA,
+                "enum" => InputType::DROPDOWN,
+                "boolean", "bool", "tinyint" => InputType::RADIO,
+            };
+        }
+
         return $this;
     }
 
@@ -130,10 +134,12 @@ class Input{
     /**
      * Returns a textarea html element while also respecting database maximums
      */
-    public function textArea(){
+    public function textArea(?string $placeholder = NULL){
+        $placeholder = $this->createInputPlaceholder($placeholder);
         ?>
         <textarea 
         name="<?= $this->name ?>" 
+        placeholder="<?= $placeholder ?>"
         <?= $this->renderRequiredAttribute() ?> 
         maxlength="<?= $this->maxLength ?>" 
         value="<?= $this->defaultValue ?>"
@@ -157,13 +163,21 @@ class Input{
         <?php
     }
 
+    public function radio(){
+        foreach($this->defaultValues as $option): ?>
+            <div>
+                <span><?= $option ?></span>
+                <input 
+                type="radio" 
+                name="<?= $this->name ?>" 
+                value="<?= $option ?>">
+            </div>
+        <?php
+        endforeach;
+    }
+
     public function textField(?string $placeholder = null): void{
-        $placeholder = match(true){
-            // if the field is a json field append a guide for data insertion (Show what is expected)
-            $this->json => ($placeholder ?? $this->prettyPrint($this->name)) . ": " . self::PLACEHOLDER_TEXT_FOR_JSON_FIELD,
-            isset($placeholder) => $placeholder,
-            default => ucfirst(str_replace("_", " ", $this->name)),
-        };
+        $placeholder = $this->createInputPlaceholder($placeholder);
         ?>
         <input 
         type="text" 
@@ -192,8 +206,17 @@ class Input{
         }
     }
 
-    public function getTypeInString(): string{
-        return $this->typeInString;
+    public function getColumnTypeInString(): string{
+        return $this->columnTypeInString;
+    }
+
+    private function createInputPlaceholder(?string $placeholder = NULL): string{
+        return match(true){
+            // if the field is a json field append a guide for data insertion (Show what is expected)
+            $this->json => ($placeholder ?? $this->prettyPrint($this->name)) . ": " . self::PLACEHOLDER_TEXT_FOR_JSON_FIELD,
+            isset($placeholder) => $placeholder,
+            default => ucfirst(str_replace("_", " ", $this->name)),
+        };
     }
 
     /**
