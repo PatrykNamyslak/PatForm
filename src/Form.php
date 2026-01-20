@@ -33,7 +33,7 @@ class Form{
             $stmt = $databaseConnection->connection->query($query);
             $stmt->setFetchMode(\PDO::FETCH_OBJ);
             $this->tableStructure = $stmt->fetchAll();
-            $this->fieldNames = array_column($this->tableStructure, "Field");
+            $this->fieldNames = array_column($this->tableStructure, column_key: ColumnInfo::NAME->value);
             return;
         }catch(Exception $e){
             echo "Form Builder Failed \n\n";
@@ -121,19 +121,23 @@ class Form{
      * @return static
      */
     public function omitFields(array $columnNames){
+        if ($columnNames === []){
+            throw new Exception('$columnNames cannot be an empty array!');
+        }
         $ts = &$this->tableStructure;
-        $currentlySetFieldNames = array_column($ts, "Name");
+        $currentlySetFieldNames = &$this->fieldNames;
         foreach($columnNames as $columnName){
             $key = array_search($columnName, $currentlySetFieldNames);
             if ($key !== false){
                 unset($ts[$key]);
+                unset($currentlySetFieldNames[$key]);
             }
         }
         return $this;
     }
 
     /**
-     * Only uses the fields provided - Be warned that upon form submission there could be an error if the database doesnt have a default value for the omitted columns
+     * Only uses the fields provided - `Be warned that upon form submission there could be an error if the database doesnt have a default value for the omitted columns`
      * @param array $columnNames
      * @throws Exception
      * @return static
@@ -142,7 +146,7 @@ class Form{
         if ($columnNames === []){
             throw new Exception('$columnNames Cannot be an empty array!');
         }
-        $currentlySetFieldNames = array_column($this->tableStructure, "Name");
+        $currentlySetFieldNames = array_column($this->tableStructure, ColumnInfo::NAME->value);
         // Check if the columns are in the table structure
         if (empty(array_diff($columnNames, $currentlySetFieldNames))){
             $newTableStructure = [];
@@ -154,6 +158,7 @@ class Form{
             throw new Exception("Invalid column names provided.: " . implode(separator: ",", array: array_diff($columnNames, $currentlySetFieldNames)));
         }
         $this->tableStructure = $newTableStructure;
+        $this->fieldNames(array_column($this->tableStructure, ColumnInfo::NAME->value));
         return $this;
     }
 
@@ -183,7 +188,7 @@ class Form{
     }
 
     /**
-     * Makes the form use HTMX for the request.
+     * Makes the form use `HTMX` for the request.
      * @param string $responseTarget This needs to be a valid CSS selector, i.e ".response" or "nearest .response" for htmx to be able to locate your element
      * @param mixed $renderResponseElement This defaults to an element called .response and ignores the users set responseTargetElement
      * @return static
@@ -200,6 +205,17 @@ class Form{
         return $this;
     }
 
+    /**
+     * Used for updating the `fieldNames` property stored in the object instance after filtering fields either using `$this->onlyUse()` or `$this->omitFields()`
+     * @param array $names
+     * @return static
+     */
+    private function fieldNames(array $names){
+        if ($names !== []){
+            $this->fieldNames = $names;
+        }
+        return $this;
+    }
     /**
      * Renders the form
      */
