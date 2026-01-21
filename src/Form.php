@@ -65,6 +65,12 @@ class Form{
         return $this;
     }
 
+    
+    /**
+     * Default form submission
+     * @param array $formData
+     * @return void
+     */
     public function submit(array $formData){
         if (!$this->validateCsrfToken($formData["csrf_token"])){
             exit(self::INVALID_CSRF);
