@@ -115,7 +115,10 @@ class Form{
 
 
     public function method(RequestMethod|string $RequestMethod){
-        $RequestMethod = strtoupper($RequestMethod);
+        // Make sure it is a valid method by making it the exact same format as in the RequestMethod::Enum
+        if (is_string($RequestMethod)){
+            $RequestMethod = strtoupper($RequestMethod);
+        }
         if (is_string($RequestMethod) and !in_array($RequestMethod, array_column(RequestMethod::cases(), "value"))){
             throw new Exception("The RequestMethod was not set as the value provided is invalid");
         }
