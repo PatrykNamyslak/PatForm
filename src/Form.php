@@ -21,7 +21,7 @@ class Form{
     private(set) string $submitButtonText = "Submit";
 
 
-    private const INVALID_CSRF = "Invalid CSRF Token.";
+    public const INVALID_CSRF = "Invalid CSRF Token.";
     /**
      * 
      * @param \PatrykNamyslak\Patbase $databaseConnection
