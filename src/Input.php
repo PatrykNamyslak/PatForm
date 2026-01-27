@@ -101,8 +101,10 @@ class Input{
         if (($this->columnTypeInString === "enum") and (count($this->defaultValues) === 2)){
             $this->type = InputType::RADIO;
         }else{
+            // Check if it is meant to be a password field
             if (str_contains($this->name, "password")){
                 $this->type = InputType::PASSWORD;
+                return $this;
             }
             $this->type = match($type){
                 "int", "smallint", "mediumint", "bigint" => InputType::NUMBER,
