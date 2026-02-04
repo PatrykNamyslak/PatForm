@@ -1,24 +1,25 @@
 <?php
-namespace PatrykNamyslak\FormBuilder;
+namespace PatrykNamyslak\PatForm\Enums;
 
-enum InputType:int{
+enum InputType{
 
     /**
      * JSON Columns can have the type of TEXT and NUMBER
      */
 
     /** Varchar Columns */
-    case TEXT = 1;
+    case TEXT;
     // Short Text, Medium Text and Long Text columns
-    case TEXT_AREA = 2;
-    // Integer columns
-    case NUMBER = 3;
+    case TEXT_AREA;
+    // Integer column
+    case NUMBER;
     // Enum / Set columns
-    case DROPDOWN = 4;
+    case DROPDOWN;
     // Timestamp columns
-    case DATE = 5;
+    case DATE;
     // Boolean columns
-    case RADIO = 6;
-    case PASSWORD = 7;
+    case RADIO;
+    case PASSWORD;
+    case CHECKBOX;
 
 }

@@ -1,19 +1,21 @@
 <?php
-// ini_set('display_errors', '1');
-// ini_set('display_startup_errors', '1');
-// error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
 // This is a test script showing off how to use the form builder
 
 
 require_once "vendor/autoload.php";
-use PatrykNamyslak\FormBuilder\Form;
+use PatrykNamyslak\PatForm\Form;
 use PatrykNamyslak\Patbase;
 
 
 $databaseConnection = new Patbase(database_name: "bite_sized_projects", username: "root", password: "root");
-$form = new Form(databaseConnection: $databaseConnection, table: "resume_projects");
-$form->action("/")->method("POST")->wrapFields()->htmx()->submitButtonText("Add Project");
+
+$form = new Form(databaseConnection: $databaseConnection, table: "patform_example");
+
+$form->action("/")->method("POST")->wrapFields()->htmx()->prepareFields();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +28,7 @@ $form->action("/")->method("POST")->wrapFields()->htmx()->submitButtonText("Add 
 <body>
     <?php
     match($_SERVER['REQUEST_METHOD']){
-        "GET" => $form->render(formTitle: "Add New Project"),
+        "GET" => $form->render(formTitle: "PatForm Example"),
         // You can use this if you want to make same page submissions
         "POST" => $form->submit(formData: $_POST),
     };

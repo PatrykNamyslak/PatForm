@@ -1,12 +1,23 @@
 <?php
-namespace PatrykNamyslak\FormBuilder;
+namespace PatrykNamyslak\PatForm;
 
+use Carbon\Carbon;
+use DateTime;
 use Exception;
 use PatrykNamyslak\Patbase;
+use PatrykNamyslak\PatForm\Enums\ColumnProperty;
+use PatrykNamyslak\PatForm\Enums\HtmxSwapMode;
+use PatrykNamyslak\PatForm\Enums\InputType;
+use PatrykNamyslak\PatForm\Enums\RequestMethod;
+use PatrykNamyslak\PatForm\Support\Column;
 
 session_start();
 
 class Form{
+    /**
+     * An array of `PatrykNamyslak\PatForm\Input::class`
+     */
+    protected array $inputFields = [];
     /** An array of objects with all of the columns and their structure i.e $tableStructure[0]->Field is the name of the column, reference: ../TableStructureDocumentation.txt*/
     private(set) array $tableStructure;
     private(set) array $fieldNames;
@@ -18,9 +29,11 @@ class Form{
     private(set) ?HtmxSwapMode $htmxSwapMode = NULL;
     private(set) ?bool $htmxRenderResponseTarget = NULL;
     private bool $csrf = true;
+    private ?string $timestampFormat = null;
     private(set) string $submitButtonText = "Submit";
 
 
+    private const DEFAULT_TIMESTAMP_FORMAT = "H:i:s d-m-Y";
     public const INVALID_CSRF = "Invalid CSRF Token.";
     /**
      * 
@@ -28,7 +41,8 @@ class Form{
      * @param string $table This is the table name for which the input fields will be fetched from, the input fields will be the columns from the table
      */
     public function __construct(protected Patbase $databaseConnection, protected string $table){
-        $query = "DESCRIBE {$table};";
+        // $query = "DESCRIBE {$table};";
+        $query = "SHOW FULL COLUMNS FROM {$table};";
         try{
             $stmt = $databaseConnection->connection->query($query);
             $stmt->setFetchMode(\PDO::FETCH_OBJ);
@@ -218,6 +232,18 @@ class Form{
         return $this;
     }
 
+
+    /**
+     * Set the default timestampFormat for specific formats
+     * @param string $format Defaults to `DEFAULT_TIMESTAMP_FORMAT`
+     * @return void
+     */
+    public function timestampFormat(string $format = self::DEFAULT_TIMESTAMP_FORMAT){
+        $this->timestampFormat = $format;
+    }
+    protected function isValidDateFormat(string $date){
+        return DateTime::createFromFormat($this->timestampFormat, datetime: $date) instanceof DateTime;
+    }
     /**
      * Used for updating the `fieldNames` property stored in the object instance after filtering fields either using `$this->onlyUse()` or `$this->omitFields()`
      * @param array $names
@@ -229,6 +255,36 @@ class Form{
         }
         return $this;
     }
+
+    public function prepareFields(){
+        foreach ($this->tableStructure as $column):
+            // Skip Auto incremented columns
+            if (Column::isAutoIncrement(column: $column)){
+                continue;
+            }
+            $input = new Input;
+            // Handle specific edge cased fields
+            match(true){
+                Column::expectsJSON($column) => $input->json(),
+                Column::expectsUnix($column) => $input->unix()->date(),
+                Column::expectsBoolean($column) => $input->boolean(),
+                Column::expectsDate($column) => $input->date(),
+                default => null,
+            };
+            // Build the input field
+            $input
+            ->dataTypeExpectedByDatabase($column->{ColumnProperty::TYPE->value})
+            ->name($column->{ColumnProperty::NAME->value})
+            ->values($column->{ColumnProperty::TYPE->value})
+            ->type($column->{ColumnProperty::TYPE->value})
+            ->default($column->{ColumnProperty::DEFAULT->value})
+            ->required(Column::isNullable($column) === false);
+            
+            // Store the input fields
+            $this->inputFields[] = $input;
+        endforeach;
+    }
+
     /**
      * Renders the form
      */
@@ -255,42 +311,28 @@ class Form{
         <input type="hidden" name="csrf_token" value="<?= $this->csrfToken() ?>">
         <?php
         endif;
-        foreach ($this->tableStructure as $column):
+        foreach ($this->inputFields as $input):
             if ($this->wrapField): ?>
                 <div>
             <?php
             endif;
-            // Skip Auto incremented columns
-            if (Column::isAutoIncrement(column: $column)){
-                continue;
-            }
-            $Input = new Input;
-            $Input
-            ->dataTypeExpectedByDatabase($column->{ColumnProperty::TYPE->value})
-            ->name($column->{ColumnProperty::NAME->value})
-            ->values($column->{ColumnProperty::TYPE->value})
-            ->type($column->{ColumnProperty::TYPE->value})
-            ->default($column->{ColumnProperty::DEFAULT->value})
-            ->required(Column::isNullable($column) === false);
 
             // Render the input field
             if($renderLabels){
-                $Input
+                $input
                 ->label()
                 ->renderLabel();
             }
-            // handle a field that accepts multiple inputs
-            if ($Input->getColumnTypeInString() === "json"){
-                $Input->json()->textField();
-            }else{
-                match($Input->type){
-                    InputType::TEXT => $Input->textField(),
-                    InputType::PASSWORD => $Input->passwordField(),
-                    InputType::TEXT_AREA => $Input->textArea(),
-                    InputType::DROPDOWN => $Input->dropdown(),
-                    InputType::RADIO => $Input->radio(),
+            match($input->type){
+                    InputType::TEXT => $input->textField(),
+                    InputType::PASSWORD => $input->passwordField(),
+                    InputType::TEXT_AREA => $input->textArea(),
+                    InputType::DROPDOWN => $input->dropdown(),
+                    InputType::RADIO => $input->radio(),
+                    InputType::NUMBER => $input->numberField(),
+                    InputType::DATE => $input->datePicker(),
+                    InputType::CHECKBOX => $input->checkBox(),
                 };
-            }
             if ($this->wrapField): ?>
                 </div>
             <?php

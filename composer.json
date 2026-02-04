@@ -4,7 +4,7 @@
     "type": "library",
     "autoload": {
         "psr-4": {
-            "PatrykNamyslak\\FormBuilder\\": "src/"
+            "PatrykNamyslak\\PatForm\\": "src/"
         }
     },
     "authors": [
@@ -14,6 +14,7 @@
         }
     ],
     "require": {
-        "patryknamyslak/patbase": "^1.3"
+        "patryknamyslak/patbase": "^1.3",
+        "nesbot/carbon": "^3.11"
     }
 }

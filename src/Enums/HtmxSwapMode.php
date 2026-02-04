@@ -1,5 +1,5 @@
 <?php
-namespace PatrykNamyslak\FormBuilder;
+namespace PatrykNamyslak\PatForm\Enums;
 
 
 /**

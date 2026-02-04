@@ -1,5 +1,5 @@
 <?php
-namespace PatrykNamyslak\FormBuilder;
+namespace PatrykNamyslak\PatForm\Enums;
 
 enum RequestMethod:string{
     case POST = "POST";
