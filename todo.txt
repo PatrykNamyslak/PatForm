@@ -1,3 +1,3 @@
-- Add type based form submission and form submission validation. I.e make sure unix fields are turned into unix timestamps as they share the same input type as regular date columns
+- Next I will want to rewrite the submit method and make a boilerplate logic handles the submission even with specific data types such as unix timestamps using CarbonPHP and also json_encode json fields and date format again using CarbonPHP
 
 - Add a requiredOnly() flag that removes any fields that have default values or are nullable, but also make sure to keep them if the onlyUse() method is also chained
