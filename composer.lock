@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1ca55fd33c448abc3079676f1ed80fc1",
+    "content-hash": "d26c661890d48a3dd11c650c26b03eee",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -182,16 +182,16 @@
         },
         {
             "name": "patryknamyslak/patbase",
-            "version": "v1.4",
+            "version": "v1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PatrykNamyslak/PatBase.git",
-                "reference": "d2cce99ce7202c024fbdcb9255000d3f66ab899e"
+                "reference": "59e7fac2741d635c7a5dc382b56bcb43106c3237"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PatrykNamyslak/PatBase/zipball/d2cce99ce7202c024fbdcb9255000d3f66ab899e",
-                "reference": "d2cce99ce7202c024fbdcb9255000d3f66ab899e",
+                "url": "https://api.github.com/repos/PatrykNamyslak/PatBase/zipball/59e7fac2741d635c7a5dc382b56bcb43106c3237",
+                "reference": "59e7fac2741d635c7a5dc382b56bcb43106c3237",
                 "shasum": ""
             },
             "require": {
@@ -215,9 +215,9 @@
             "description": "PHP database Controller",
             "support": {
                 "issues": "https://github.com/PatrykNamyslak/PatBase/issues",
-                "source": "https://github.com/PatrykNamyslak/PatBase/tree/v1.4"
+                "source": "https://github.com/PatrykNamyslak/PatBase/tree/v1.4.1"
             },
-            "time": "2026-02-01T03:06:34+00:00"
+            "time": "2026-02-01T15:37:56+00:00"
         },
         {
             "name": "psr/clock",
