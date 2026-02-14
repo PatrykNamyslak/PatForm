@@ -44,7 +44,9 @@ class Form{
      * @param string $table This is the table name for which the input fields will be fetched from, the input fields will be the columns from the table
      */
     public function __construct(protected Patbase $databaseConnection, protected string $table){
-        $this->table = str_replace([" ", "-"], "_", trim($table));
+        if (!preg_match(pattern: '/^[a-zA-Z0-9_]+$/', subject: $table)) {
+            throw new \InvalidArgumentException("Invalid table name: {$table}");
+        }
         $query = "SHOW FULL COLUMNS FROM `{$this->table}`;";
         try{
             $stmt = $databaseConnection->connection->query($query);

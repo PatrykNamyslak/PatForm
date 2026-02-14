@@ -70,6 +70,6 @@ abstract class Column{
      * @return bool
      */
     public static function expectsBoolean(object $column): bool{
-        return str_contains(strtolower($column->{ColumnProperty::COMMENTS->value}), "[boolean]");
+        return self::hasFlag($column, "[boolean]");
     }
 }
