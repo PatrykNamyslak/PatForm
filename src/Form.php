@@ -10,12 +10,14 @@ use PatrykNamyslak\PatForm\Enums\HtmxSwapMode;
 use PatrykNamyslak\PatForm\Enums\InputType;
 use PatrykNamyslak\PatForm\Enums\RequestMethod;
 use PatrykNamyslak\PatForm\Support\Column;
+use RuntimeException;
+use Throwable;
 
 session_start();
 
 class Form{
     /**
-     * An array of `PatrykNamyslak\PatForm\Input::class`
+     * @var \PatrykNamyslak\PatForm\Input[]
      */
     protected array $inputFields = [];
     /** An array of objects with all of the columns and their structure i.e $tableStructure[0]->Field is the name of the column, reference: ../TableStructureDocumentation.txt*/
@@ -25,6 +27,7 @@ class Form{
     private string $method;
     private bool $wrapField = false;
     private(set) bool $htmx = false;
+    public bool $htmxWasInjected = false;
     private(set) ?string $htmxResponseTarget = NULL;
     private(set) ?HtmxSwapMode $htmxSwapMode = NULL;
     private(set) ?bool $htmxRenderResponseTarget = NULL;
@@ -41,17 +44,16 @@ class Form{
      * @param string $table This is the table name for which the input fields will be fetched from, the input fields will be the columns from the table
      */
     public function __construct(protected Patbase $databaseConnection, protected string $table){
-        // $query = "DESCRIBE {$table};";
-        $query = "SHOW FULL COLUMNS FROM {$table};";
+        $this->table = str_replace([" ", "-"], "_", trim($table));
+        $query = "SHOW FULL COLUMNS FROM `{$this->table}`;";
         try{
             $stmt = $databaseConnection->connection->query($query);
             $stmt->setFetchMode(\PDO::FETCH_OBJ);
             $this->tableStructure = $stmt->fetchAll();
             $this->fieldNames = array_column($this->tableStructure, column_key: ColumnProperty::NAME->value);
             return;
-        }catch(Exception $e){
-            echo "Form Builder Failed \n\n";
-            return;
+        }catch(Throwable $e){
+            throw new RuntimeException("Form Builder Failed");
             // echo $e;
         }
     }
@@ -88,7 +90,7 @@ class Form{
      * @param array $formData
      * @return void
      */
-    public function submit(array $formData){
+    public function submit(array $formData): void{
         if (!$this->validateCsrfToken($formData["csrf_token"])){
             exit(self::INVALID_CSRF);
         }
@@ -100,16 +102,18 @@ class Form{
                 default => $formData[$column->Field],
             };
         }
-        $columnNames = implode(",", $this->fieldNames);
+        // Add backticks to prevent a column name being the same as an SQL operator
+        $backtickedFieldNames = array_map(fn($field) => "`$field`", $this->fieldNames);
+        $columnNames = implode(",", $backtickedFieldNames);
         $query = "INSERT INTO `{$this->table}` ({$columnNames}) VALUES($placeholders);";
         try{
             $this->databaseConnection->prepare($query, $formData)->execute();
             echo "Form submitted!";
             return;
         }catch(Exception $e){
-            echo $e;
-            echo "An error has occurred";
+            echo "An error has occurred while attempting to submit the form!";
             return;
+            // echo $e;
         }
     }
 
@@ -117,23 +121,23 @@ class Form{
      * Sets where the form should send data.
      * @param string $destination URI or URL
      */
-    public function action(string $destination){
+    public function action(string $destination): static{
         $this->action = $destination;
         return $this;
     }
 
-    public function submitButtonText(string $value){
+    public function submitButtonText(string $value): static{
         $this->submitButtonText = $value;
         return $this;
     }
 
 
-    public function method(RequestMethod|string $RequestMethod){
+    public function method(RequestMethod|string $RequestMethod): static{
         // Make sure it is a valid method by making it the exact same format as in the RequestMethod::Enum
         if (is_string($RequestMethod)){
             $RequestMethod = strtoupper($RequestMethod);
         }
-        if (is_string($RequestMethod) and !in_array($RequestMethod, array_column(RequestMethod::cases(), "value"))){
+        if (is_string($RequestMethod) && !in_array($RequestMethod, array_column(RequestMethod::cases(), "value"))){
             throw new Exception("The RequestMethod was not set as the value provided is invalid");
         }
         $this->method = match(true){
@@ -147,7 +151,7 @@ class Form{
      * Pass an array of column names that are in the target table that the form is being generated from to remove them from the final form, this can cause errors if the database does not have default values for these columns upon form submission or you don't handle form submission correctly by modifying the submit functionality.
      * @return static
      */
-    public function omitFields(array $columnNames){
+    public function omitFields(array $columnNames): static{
         if ($columnNames === []){
             throw new Exception('$columnNames cannot be an empty array!');
         }
@@ -169,7 +173,7 @@ class Form{
      * @throws Exception
      * @return static
      */
-    public function onlyUse(array $columnNames){
+    public function onlyUse(array $columnNames): static{
         if ($columnNames === []){
             throw new Exception('$columnNames Cannot be an empty array!');
         }
@@ -190,21 +194,21 @@ class Form{
     }
 
 
-    public function noCsrf(){
+    public function noCsrf(): static{
         $this->csrf = false;
         return $this;
     }
-    private function createCsrfToken(){
+    private function createCsrfToken(): string{
         return bin2hex(random_bytes(32));
     }
-    private function setCsrfToken(){
+    private function setCsrfToken(): void{
         $_SESSION["csrf_token"] = $this->createCsrfToken();
     }
     /**
      * Returns the currently set CSRF token and if there is none set, it sets it, then returns it.
      * @return string
      */
-    public function csrfToken(){
+    public function csrfToken(): string{
         if (!$_SESSION["csrf_token"]){
             $this->setCSRFToken();
         }
@@ -299,8 +303,11 @@ class Form{
             <?php
             endif;
             // Inject htmx dependency
+            if (!$this->htmxWasInjected): ?>
+                <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+            <?php
+            endif;
             ?>
-            <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
             <form hx-<?= $this->method ?>="<?= $this->action ?>" hx-swap="<?= $this->htmxSwapMode->value ?>" hx-target="<?= $this->htmxResponseTarget ?>">
         <?php
         else: ?>

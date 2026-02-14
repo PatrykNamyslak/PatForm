@@ -38,30 +38,30 @@ abstract class Column{
     }
 
     public static function expectsPassword(object $column){
-        return str_contains($column->{ColumnProperty::NAME->value}, "password");
+        return str_contains(strtolower($column->{ColumnProperty::NAME->value}), "password");
     }
 
     public static function expectsDate(object $column){
         $isDateColumn = in_array(strtoupper($column->{ColumnProperty::TYPE->value}), Schema::DATE_TYPES);
-        return Column::isUnix($column) or $isDateColumn;
+        return Column::isUnix($column) || $isDateColumn;
     }
     public static function isUnix(object $column){
-        return Column::hasFlag(column: $column, flag: "unix") and ($column->{ColumnProperty::TYPE->value} === Schema::BIGINT);
+        return Column::hasFlag(column: $column, flag: "unix") && ($column->{ColumnProperty::TYPE->value} === Schema::BIGINT);
     }
 
     public static function hasFlag(object $column, string $flag){
-        return str_contains(strtolower($column->{ColumnProperty::COMMENTS->value}), "[$flag]");
+        // Casting string to the comment value to prevent a Depreciation error caused by null values being passed into strtolower
+        return str_contains(strtolower((string) $column->{ColumnProperty::COMMENTS->value}), "[$flag]");
     }
 
     /**
-     * For a json column you can set an `optional` `[json]` flag in the `comments` section of the column schema, this is added for `consistency` and is `NOT` required.
+     * Check whether a column is expecting JSON data
      * @param object $column
-     * @return bool `true` `ONLY` if the column is of type `json` in the `table schema`, `OR` if its of type `json` and the `flag is set`. Returns `false` If the column has the `[json]` flag set but is `NOT` of type json.
+     * @return bool
      */
     public static function expectsJSON(object $column): bool{
-        $flagIsSet = Column::hasFlag($column, "json");
         $isJsonColumn = str_contains($column->{ColumnProperty::TYPE->value}, "json");
-        return $isJsonColumn or ($isJsonColumn and $flagIsSet);
+        return $isJsonColumn;
     }
 
     /**

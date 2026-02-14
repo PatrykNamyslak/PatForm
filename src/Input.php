@@ -77,7 +77,7 @@ class Input{
 
         // Remove single quotes
         foreach($possibleValues as &$value){
-            $value = trim($value, "'");
+            $value = trim($value, " '");
         }
         $this->possibleValues = $possibleValues;
         return $this;
@@ -119,7 +119,7 @@ class Input{
      * @return bool
      */
     public function expectsUnix(): bool{
-        return $this->columnTypeInString === "bigint" and $this->unix;
+        return $this->columnTypeInString === "bigint" && $this->unix;
     }
 
     /**
@@ -128,7 +128,7 @@ class Input{
      */
     public function expectsBoolean(){
         $booleanTypes = ["boolean", "bool", "tinyint"];
-        return in_array($this->columnTypeInString, $booleanTypes) and $this->boolean;
+        return in_array($this->columnTypeInString, $booleanTypes) && $this->boolean;
     }
     /**
      * Checks if the input expects a password.
@@ -152,7 +152,7 @@ class Input{
      * @return bool
      */
     public function expectsChoiceBetweenTwoOptions(): bool{
-        return ($this->columnTypeInString === "enum") and (count($this->possibleValues) === 2);
+        return ($this->columnTypeInString === "enum") && (count($this->possibleValues) === 2);
     }
 
     /**
@@ -228,9 +228,7 @@ class Input{
         ?>
         <input type="password" name="<?= $this->name ?>" 
         placeholder="<?= $placeholder ?>" 
-        <?php
-        $this->renderRequiredAttribute();
-        ?>
+        <?= $this->renderRequiredAttribute() ?>
         >
         <?php
     }
@@ -249,7 +247,7 @@ class Input{
     public function dropdown(): void{
         ?>
         <select name="<?= $this->name ?>" 
-        <?php $this->renderRequiredAttribute(); ?>
+        <?= $this->renderRequiredAttribute(); ?>
         >
         <option selected disabled>Please choose an option</option>
         <?php
@@ -287,7 +285,7 @@ class Input{
         name="<?= $this->name ?>" 
         maxlength="<?= $this->maxLength ?>" 
         value="<?= $this->defaultValue ?>" 
-        <?php $this->renderRequiredAttribute() ?> 
+        <?= $this->renderRequiredAttribute() ?> 
         >
         <?php
     }
@@ -305,7 +303,7 @@ class Input{
         ?>
         <input type="date" 
         name="<?= $this->name ?>" 
-        <?php $this->renderRequiredAttribute() ?>
+        <?= $this->renderRequiredAttribute() ?>
         >
         <?php
     }
@@ -316,27 +314,28 @@ class Input{
         <input type="number" 
         placeholder="<?= $placeholder ?>"
         name="<?= $this->name ?>" 
-        max="<?= $this->maxLength ?>" 
         value="<?= $this->defaultValue ?>" 
-        <?php $this->renderRequiredAttribute() ?>
+        <?= $this->renderRequiredAttribute() ?>
         >
         <?php
     }
 
     /**
-     * This functions pure purpose is to check if there should be a required mark on an input field or not include it
-     * @return void
+     * Renders the required attribute if the field is `NOT` nullable
+     * @return ?string
      */
-    public function renderRequiredAttribute(): void{
-        if($this->required){
-            echo "required";
-        }
+    public function renderRequiredAttribute(): ?string{
+        return match(true){
+            $this->required => "required",
+            default => null,
+        };
     }
 
-    public function renderMultipleAttribute(): void{
-        if($this->acceptMultipleValues){
-            echo "multiple";
-        }
+    public function renderMultipleAttribute(): ?string{
+        return match(true){
+            $this->acceptMultipleValues => "multiple",
+            default => null,
+        };
     }
 
     public function getColumnTypeInString(): string{
