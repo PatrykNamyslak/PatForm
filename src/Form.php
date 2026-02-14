@@ -27,7 +27,7 @@ class Form{
     private string $method;
     private bool $wrapField = false;
     private(set) bool $htmx = false;
-    public bool $htmxWasInjected = false;
+    public static bool $htmxWasInjected = false;
     private(set) ?string $htmxResponseTarget = NULL;
     private(set) ?HtmxSwapMode $htmxSwapMode = NULL;
     private(set) ?bool $htmxRenderResponseTarget = NULL;
@@ -195,6 +195,10 @@ class Form{
         return $this;
     }
 
+    public static function wasHtmxInjected(){
+        return self::$htmxWasInjected;
+    }
+
 
     public function noCsrf(): static{
         $this->csrf = false;
@@ -305,9 +309,10 @@ class Form{
             <?php
             endif;
             // Inject htmx dependency
-            if (!$this->htmxWasInjected): ?>
+            if (!self::wasHtmxInjected()): ?>
                 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
             <?php
+            self::$htmxWasInjected = true;
             endif;
             ?>
             <form hx-<?= $this->method ?>="<?= $this->action ?>" hx-swap="<?= $this->htmxSwapMode->value ?>" hx-target="<?= $this->htmxResponseTarget ?>">

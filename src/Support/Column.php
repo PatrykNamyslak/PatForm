@@ -51,6 +51,7 @@ abstract class Column{
 
     public static function hasFlag(object $column, string $flag){
         // Casting string to the comment value to prevent a Depreciation error caused by null values being passed into strtolower
+        $flag = trim($flag, "[]");
         return str_contains(strtolower((string) $column->{ColumnProperty::COMMENTS->value}), "[$flag]");
     }
 
@@ -70,6 +71,6 @@ abstract class Column{
      * @return bool
      */
     public static function expectsBoolean(object $column): bool{
-        return self::hasFlag($column, "[boolean]");
+        return self::hasFlag($column, "boolean");
     }
 }
