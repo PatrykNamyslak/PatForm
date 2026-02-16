@@ -1,7 +1,7 @@
 <?php
-// ini_set('display_errors', '1');
-// ini_set('display_startup_errors', '1');
-// error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
 // This is a test script showing off how to use the form builder
 
@@ -11,7 +11,7 @@ use PatrykNamyslak\PatForm\Form;
 use PatrykNamyslak\Patbase;
 
 
-$databaseConnection = new Patbase(database: "bite_sized_projects", username: "root", password: "root");
+$databaseConnection = new Patbase(host: "localhost", database: "bite_sized_projects", username: "root", password: "root");
 
 $form = new Form(databaseConnection: $databaseConnection, table: "patform_example");
 
