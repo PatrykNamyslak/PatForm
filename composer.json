@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "patryknamyslak/patbase": "2.1.1",
+        "patryknamyslak/patbase": "^2.2",
         "nesbot/carbon": "^3.11"
     }
 }
