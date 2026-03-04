@@ -15,6 +15,7 @@
     ],
     "require": {
         "patryknamyslak/patbase": "^2.2",
-        "nesbot/carbon": "^3.11"
+        "nesbot/carbon": "^3.11",
+        "patryknamyslak/html-element-builder": "^1.0"
     }
 }

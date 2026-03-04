@@ -3,3 +3,5 @@
 - Add a requiredOnly() flag that removes any fields that have default values or are nullable, but also make sure to keep them if the onlyUse() method is also chained
 
 - Add a fromArray() and fromSchema() function to generate from rather than querying the database
+
+- Implement a Column object rather than relying on an obscure Object and using the ColumnProperty enum for object manipulation

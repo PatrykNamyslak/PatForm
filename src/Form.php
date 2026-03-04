@@ -4,25 +4,26 @@ namespace PatrykNamyslak\PatForm;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
+use PatrykNamyslak\Builders\HtmlElement;
 use PatrykNamyslak\Patbase;
 use PatrykNamyslak\PatForm\Enums\ColumnProperty;
 use PatrykNamyslak\PatForm\Enums\HtmxSwapMode;
 use PatrykNamyslak\PatForm\Enums\InputType;
 use PatrykNamyslak\PatForm\Enums\RequestMethod;
+use PatrykNamyslak\PatForm\Exceptions\FeatureNotImplemented;
 use PatrykNamyslak\PatForm\Support\Column;
 use RuntimeException;
 use Throwable;
-
 session_start();
 
 class Form{
     /**
-     * @var \PatrykNamyslak\PatForm\Input[]
+     * @var Input[]
      */
     protected array $inputFields = [];
     /** An array of objects with all of the columns and their structure i.e $tableStructure[0]->Field is the name of the column, reference: ../TableStructureDocumentation.txt*/
     private(set) array $tableStructure;
-    private(set) array $fieldNames;
+    private(set) ?array $fieldsToRender = NULL;
     private string $action;
     private string $method;
     private bool $wrapField = false;
@@ -43,7 +44,8 @@ class Form{
      * @param \PatrykNamyslak\Patbase $databaseConnection
      * @param string $table This is the table name for which the input fields will be fetched from, the input fields will be the columns from the table
      */
-    public function __construct(protected Patbase $databaseConnection, protected string $table){
+    public function __construct(protected Patbase $databaseConnection, protected string $table, protected ?HtmlElement $wrapperElement = NULL){
+        // Accept alphanumeric characters (letters and numbers) and underscores, `table-name` would be invalid
         if (!preg_match(pattern: '/^[a-zA-Z0-9_]+$/', subject: $table)) {
             throw new \InvalidArgumentException("Invalid table name: {$table}");
         }
@@ -52,7 +54,11 @@ class Form{
             $stmt = $databaseConnection->connection->query($query);
             $stmt->setFetchMode(\PDO::FETCH_OBJ);
             $this->tableStructure = $stmt->fetchAll();
-            $this->fieldNames = array_column($this->tableStructure, column_key: ColumnProperty::NAME->value);
+            
+            $this->wrapperElement = match(true){
+                isset($this->wrapperElement) => $this->wrapperElement,
+                default => new HtmlElement(),
+            };
             return;
         }catch(Throwable $e){
             throw new RuntimeException("Form Builder Failed");
@@ -60,6 +66,20 @@ class Form{
         }
     }
 
+    /**
+     * Create an instance by providing the structure of each column
+     * @return self
+     */
+    public static function fromArray(): self{
+        throw new FeatureNotImplemented;
+    }
+
+    public static function fromSchema(string $schema): void{
+        throw new FeatureNotImplemented;
+    }
+    public static function fromMigrationSchema(string $schema): void{
+        throw new FeatureNotImplemented;
+    }
 
     /**
      * Turn an array of regular field names into placeholders that are ready for prepared statements.
@@ -83,7 +103,6 @@ class Form{
         return $this;
     }
 
-    
 
     protected function beforeSubmit(array $formData){}
     protected function afterSubmit(array $formData){}
@@ -97,7 +116,7 @@ class Form{
             exit(self::INVALID_CSRF);
         }
         unset($formData["csrf_token"]);
-        $placeholders = $this->createPlaceholdersFromArray($this->fieldNames);
+        $placeholders = $this->createPlaceholdersFromArray($this->getFieldNames());
         foreach($this->tableStructure as $column){
             $formData[$column->Field] = match($column->Type){
                 "json" => json_encode(explode(",", $formData[$column->Field])),
@@ -105,7 +124,7 @@ class Form{
             };
         }
         // Add backticks to prevent a column name being the same as an SQL operator
-        $backtickedFieldNames = array_map(fn($field) => "`$field`", $this->fieldNames);
+        $backtickedFieldNames = array_map(fn($field) => "`$field`", $this->getFieldNames());
         $columnNames = implode(",", $backtickedFieldNames);
         $query = "INSERT INTO `{$this->table}` ({$columnNames}) VALUES($placeholders);";
         try{
@@ -149,6 +168,24 @@ class Form{
         return $this;
     }
 
+    protected function getFieldNames(): array{
+        return array_column(array: $this->fieldsToRender ?? $this->tableStructure, column_key: ColumnProperty::NAME->value);
+    }
+
+    public function requiredOnly(): static{
+        // $ts = table structure
+        $ts = $this->tableStructure;
+        // An array of column objects that will be used for form generation
+        $fieldsToUse = [];
+        foreach ($ts as $column){
+            if (!Column::isNullable($column)){
+                $fieldsToUse[] = $column;
+            }
+        }
+        $this->fields($fieldsToUse);
+        return $this;
+    }
+
     /**
      * Pass an array of column names that are in the target table that the form is being generated from to remove them from the final form, this can cause errors if the database does not have default values for these columns upon form submission or you don't handle form submission correctly by modifying the submit functionality.
      * @return static
@@ -157,15 +194,15 @@ class Form{
         if ($columnNames === []){
             throw new Exception('$columnNames cannot be an empty array!');
         }
-        $ts = &$this->tableStructure;
-        $currentlySetFieldNames = &$this->fieldNames;
+        $ts = $this->tableStructure;
+        $currentlySetFieldNames = $this->getFieldNames();
         foreach($columnNames as $columnName){
             $key = array_search($columnName, $currentlySetFieldNames);
             if ($key !== false){
                 unset($ts[$key]);
-                unset($currentlySetFieldNames[$key]);
             }
         }
+        $this->fields($ts);
         return $this;
     }
 
@@ -179,23 +216,35 @@ class Form{
         if ($columnNames === []){
             throw new Exception('$columnNames Cannot be an empty array!');
         }
-        $currentlySetFieldNames = array_column($this->tableStructure, ColumnProperty::NAME->value);
+        $currentlySetFieldNames = $this->getFieldNames();
         // Check if the columns are in the table structure
         if (empty(array_diff($columnNames, $currentlySetFieldNames))){
-            $newTableStructure = [];
+            $columnsToRender = [];
             foreach($columnNames as $columnName){
                 $position = array_search($columnName, $currentlySetFieldNames);
-                $newTableStructure[] = $this->tableStructure[$position];
+                $columnsToRender[] = $this->tableStructure[$position];
             }
         }else{
             throw new Exception("Invalid column names provided.: " . implode(separator: ",", array: array_diff($columnNames, $currentlySetFieldNames)));
         }
-        $this->tableStructure = $newTableStructure;
-        $this->fieldNames(array_column($this->tableStructure, ColumnProperty::NAME->value));
+        $this->fields($columnsToRender);
         return $this;
     }
 
-    public static function wasHtmxInjected(){
+    /**
+     * Add extra columns to use, ideal for chaining after an onlyUse() call.å
+     * @return static
+     */
+    public function alsoUse(array $columnNames): static{
+        foreach($columnNames as $columnName){
+            // Search for the object key by getting its location in the array column of field name
+            $objectKey = array_search($columnName, array_column($this->tableStructure, ColumnProperty::NAME->value));
+            $this->fieldsToRender[] = $this->tableStructure[$objectKey];
+        }
+        return $this;
+    }
+
+    public static function wasHtmxInjected(): bool{
         return self::$htmxWasInjected;
     }
 
@@ -220,7 +269,7 @@ class Form{
         }
         return $_SESSION["csrf_token"];
     }
-    public function validateCsrfToken(string $token){
+    public function validateCsrfToken(string $token): bool{
         return $token === $this->csrfToken();
     }
 
@@ -248,26 +297,29 @@ class Form{
      * @param string $format Defaults to `DEFAULT_TIMESTAMP_FORMAT`
      * @return void
      */
-    public function timestampFormat(string $format = self::DEFAULT_TIMESTAMP_FORMAT){
+    public function timestampFormat(string $format = self::DEFAULT_TIMESTAMP_FORMAT): void{
         $this->timestampFormat = $format;
     }
     protected function isValidDateFormat(string $date){
         return DateTime::createFromFormat($this->timestampFormat, datetime: $date) instanceof DateTime;
     }
     /**
-     * Used for updating the `fieldNames` property stored in the object instance after filtering fields either using `$this->onlyUse()` or `$this->omitFields()`
-     * @param array $names
+     * Set the fields / columns that will be rendered
+     * @param object[] $columns
      * @return static
      */
-    private function fieldNames(array $names){
-        if ($names !== []){
-            $this->fieldNames = $names;
-        }
+    protected function fields(array $columns): static{
+        $this->fieldsToRender = $columns;
         return $this;
     }
 
-    public function prepareFields(){
-        foreach ($this->tableStructure as $column):
+    public function prepareFields(): void{
+        $columns = match(true){
+            $this->fieldsToRender !== [] => $this->fieldsToRender,
+            default => $this->tableStructure,
+        };
+
+        foreach ($columns as $column):
             // Skip Auto incremented columns
             if (Column::isAutoIncrement(column: $column)){
                 continue;
@@ -298,7 +350,7 @@ class Form{
     /**
      * Renders the form
      */
-    public function render(string $formTitle, bool $renderLabels = true){
+    public function render(string $formTitle, bool $renderLabels = true): void{
         ?>
         <h2><?= $formTitle ?></h2>
         <?php
@@ -327,7 +379,7 @@ class Form{
         endif;
         foreach ($this->inputFields as $input):
             if ($this->wrapField): ?>
-                <div>
+                <?= $this->wrapperElement->render(delayEndTag: true) ?>
             <?php
             endif;
 
@@ -348,7 +400,7 @@ class Form{
                     InputType::CHECKBOX => $input->checkBox(),
                 };
             if ($this->wrapField): ?>
-                </div>
+                <?= $this->wrapperElement->renderEndTag() ?>
             <?php
             endif;
         endforeach;

@@ -1,4 +1,5 @@
 <?php
+
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
@@ -9,13 +10,13 @@ error_reporting(E_ALL);
 require_once "vendor/autoload.php";
 use PatrykNamyslak\PatForm\Form;
 use PatrykNamyslak\Patbase;
-
+use PatrykNamyslak\Builders\HtmlElement;
 
 $databaseConnection = new Patbase(host: "localhost", database: "bite_sized_projects", username: "root", password: "root");
 
-$form = new Form(databaseConnection: $databaseConnection, table: "patform_example");
-
-$form->action("/")->method("POST")->wrapFields()->htmx()->prepareFields();
+$wrapperElement = new HtmlElement("div")->attributes(["class" => "some_class", "id" => "some ID"]);
+$form = new Form(databaseConnection: $databaseConnection, table: "patform_example", wrapperElement: $wrapperElement);
+$form->action("/")->method("POST")->requiredOnly()->wrapFields()->htmx()->prepareFields();
 ?>
 <!DOCTYPE html>
 <html lang="en">

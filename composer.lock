@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e9b5f9c6f4abb4d9d53b422506cb4ffa",
+    "content-hash": "dbc493c5716dd12a2e839d307244b31a",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -241,6 +241,43 @@
                 }
             ],
             "time": "2026-01-29T09:26:29+00:00"
+        },
+        {
+            "name": "patryknamyslak/html-element-builder",
+            "version": "v1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PatrykNamyslak/HTML-Element-Builder.git",
+                "reference": "26269740d254eee94b821073b498985efc0e1574"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PatrykNamyslak/HTML-Element-Builder/zipball/26269740d254eee94b821073b498985efc0e1574",
+                "reference": "26269740d254eee94b821073b498985efc0e1574",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PatrykNamyslak\\Builders\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Patryk",
+                    "email": "contact@patryknamyslak.pl"
+                }
+            ],
+            "description": "A simple yet powerful HTML element builder.",
+            "support": {
+                "issues": "https://github.com/PatrykNamyslak/HTML-Element-Builder/issues",
+                "source": "https://github.com/PatrykNamyslak/HTML-Element-Builder/tree/v1"
+            },
+            "time": "2026-03-04T17:28:41+00:00"
         },
         {
             "name": "patryknamyslak/patbase",
