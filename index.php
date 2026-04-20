@@ -16,7 +16,8 @@ $databaseConnection = new Patbase(host: "localhost", database: "bite_sized_proje
 
 $wrapperElement = new HtmlElement("div")->attributes(["class" => "some_class", "id" => "some ID"]);
 $form = new Form(databaseConnection: $databaseConnection, table: "patform_example", wrapperElement: $wrapperElement);
-$form->action("/")->method("POST")->requiredOnly()->wrapFields()->htmx()->prepareFields();
+
+$form->action("/")->method("POST")->onlyUse(["json"])->alsoUse(['text'])->wrapFields()->htmx()->prepareFields();
 ?>
 <!DOCTYPE html>
 <html lang="en">

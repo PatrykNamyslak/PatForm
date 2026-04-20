@@ -55,7 +55,7 @@ class Input{
      * Mark the input as a unix timestamp field
      * @return static
      */
-    public function unix(){
+    public function unix(): static{
         $this->unix = true;
         return $this;
     }
@@ -93,7 +93,7 @@ class Input{
      * @param string $value Name of the column that the input field is being generated for
      * @return static
      */
-    public function name(string $value){
+    public function name(string $value): static{
         $this->name = $value;
         return $this;
     }
@@ -103,7 +103,7 @@ class Input{
      * @param ?string $value
      * @return static
      */
-    public function label(?string $value = null){
+    public function label(?string $value = null): static{
         $this->label = str_replace("_", " ", $value ?? $this->name);
         return $this;
     }
@@ -160,7 +160,7 @@ class Input{
      * @param string $type Passed from column structure from Form::prepareFields()
      * @return static
      */
-    public function type(string $type){
+    public function type(string $type): static{
         // extract the type by trimming the values. i.e enum(1,2,3,4) will be just enum. $values is (1,2,3,4) so we are using an intersect method to remove it.
         if(str_contains($type, "(")){
             $type = strtolower(

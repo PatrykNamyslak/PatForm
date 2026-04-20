@@ -22,16 +22,16 @@ class Form{
      */
     protected array $inputFields = [];
     /** An array of objects with all of the columns and their structure i.e $tableStructure[0]->Field is the name of the column, reference: ../TableStructureDocumentation.txt*/
-    private(set) array $tableStructure;
-    private(set) ?array $fieldsToRender = NULL;
+    private(set) ?array $tableStructure = null;
+    private(set) ?array $fieldsToRender = null;
     private string $action;
     private string $method;
     private bool $wrapField = false;
     private(set) bool $htmx = false;
     public static bool $htmxWasInjected = false;
-    private(set) ?string $htmxResponseTarget = NULL;
-    private(set) ?HtmxSwapMode $htmxSwapMode = NULL;
-    private(set) ?bool $htmxRenderResponseTarget = NULL;
+    private(set) ?string $htmxResponseTarget = null;
+    private(set) ?HtmxSwapMode $htmxSwapMode = null;
+    private(set) ?bool $htmxRenderResponseTarget = null;
     private bool $csrf = true;
     private ?string $timestampFormat = null;
     private(set) string $submitButtonText = "Submit";
@@ -44,7 +44,7 @@ class Form{
      * @param \PatrykNamyslak\Patbase $databaseConnection
      * @param string $table This is the table name for which the input fields will be fetched from, the input fields will be the columns from the table
      */
-    public function __construct(protected Patbase $databaseConnection, protected string $table, protected ?HtmlElement $wrapperElement = NULL){
+    public function __construct(protected Patbase $databaseConnection, protected string $table, protected ?HtmlElement $wrapperElement = null){
         // Accept alphanumeric characters (letters and numbers) and underscores, `table-name` would be invalid
         if (!preg_match(pattern: '/^[a-zA-Z0-9_]+$/', subject: $table)) {
             throw new \InvalidArgumentException("Invalid table name: {$table}");
@@ -88,7 +88,7 @@ class Form{
      */
     public function createPlaceholdersFromArray(array $fieldNames): string{
         foreach($fieldNames as &$placeholder){
-            $placeholder = ":" . $placeholder;
+            $placeholder = ":{$placeholder}";
         }
         return implode(",", $fieldNames);
     }
@@ -98,7 +98,7 @@ class Form{
      * Adds a div surrounding the input and its label, this is if you want to use flexbox or a grid layout for the form.
      * @return static
      */
-    public function wrapFields(){
+    public function wrapFields(): static{
         $this->wrapField = true;
         return $this;
     }
@@ -232,7 +232,7 @@ class Form{
     }
 
     /**
-     * Add extra columns to use, ideal for chaining after an onlyUse() call.å
+     * Add extra columns to use, ideal for chaining after an onlyUse() call.
      * @return static
      */
     public function alsoUse(array $columnNames): static{
@@ -313,11 +313,11 @@ class Form{
         return $this;
     }
 
-    public function prepareFields(): void{
-        $columns = match(true){
-            $this->fieldsToRender !== [] => $this->fieldsToRender,
-            default => $this->tableStructure,
-        };
+    /**
+     * Method to prepare the fields prior to rendering upon `Form::render()`
+     */
+    public function prepareFields(): static{
+        $columns = $this->fieldsToRender ?? $this->tableStructure;
 
         foreach ($columns as $column):
             // Skip Auto incremented columns
@@ -345,12 +345,14 @@ class Form{
             // Store the input fields
             $this->inputFields[] = $input;
         endforeach;
+        return $this;
     }
 
     /**
      * Renders the form
      */
     public function render(string $formTitle, bool $renderLabels = true): void{
+        if ($this->fieldsToRender === []) $this->fields($this->inputFields);
         ?>
         <h2><?= $formTitle ?></h2>
         <?php
